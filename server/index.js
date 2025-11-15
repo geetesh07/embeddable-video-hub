@@ -114,6 +114,12 @@ app.get('/api/videos', async (req, res) => {
 app.get('/api/videos/:id', async (req, res) => {
   try {
     const videoPath = Buffer.from(req.params.id, 'base64').toString('utf-8');
+    
+    // Security: Validate path is within allowed folders
+    if (!isPathAllowed(videoPath)) {
+      return res.status(403).json({ error: 'Access denied: Video not in configured folders' });
+    }
+    
     const stats = await fs.stat(videoPath);
     
     if (!stats.isFile()) {
@@ -158,6 +164,12 @@ app.get('/api/videos/:id', async (req, res) => {
 app.get('/api/stream/:id', async (req, res) => {
   try {
     const videoPath = Buffer.from(req.params.id, 'base64').toString('utf-8');
+    
+    // Security: Validate path is within allowed folders
+    if (!isPathAllowed(videoPath)) {
+      return res.status(403).json({ error: 'Access denied: Video not in configured folders' });
+    }
+    
     const stats = await fs.stat(videoPath);
     const fileSize = stats.size;
     const range = req.headers.range;
@@ -199,8 +211,19 @@ app.get('/api/stream/:id', async (req, res) => {
 app.get('/api/subtitles/:videoId/:filename', async (req, res) => {
   try {
     const videoPath = Buffer.from(req.params.videoId, 'base64').toString('utf-8');
+    
+    // Security: Validate video path is within allowed folders
+    if (!isPathAllowed(videoPath)) {
+      return res.status(403).json({ error: 'Access denied: Video not in configured folders' });
+    }
+    
     const dirPath = path.dirname(videoPath);
     const subtitlePath = path.join(dirPath, req.params.filename);
+    
+    // Security: Validate the final subtitle path is also within allowed folders
+    if (!isPathAllowed(subtitlePath)) {
+      return res.status(403).json({ error: 'Access denied: Subtitle not in configured folders' });
+    }
     
     const content = await fs.readFile(subtitlePath, 'utf-8');
     const ext = path.extname(subtitlePath).toLowerCase();
@@ -213,12 +236,99 @@ app.get('/api/subtitles/:videoId/:filename', async (req, res) => {
   }
 });
 
+// Helper function to validate path is within allowed folders
+function isPathAllowed(requestedPath) {
+  const normalizedPath = path.normalize(requestedPath);
+  return VIDEO_FOLDERS.some(allowedFolder => {
+    const normalizedAllowed = path.normalize(allowedFolder);
+    return normalizedPath === normalizedAllowed || 
+           normalizedPath.startsWith(normalizedAllowed + path.sep);
+  });
+}
+
+// Browse folder contents (non-recursive)
+app.get('/api/browse', async (req, res) => {
+  try {
+    // Check if any folders are configured
+    if (VIDEO_FOLDERS.length === 0) {
+      return res.json({ 
+        folders: [], 
+        videos: [], 
+        currentPath: null,
+        error: 'No folders configured. Add a folder path in the Folders page.' 
+      });
+    }
+
+    const folderPath = req.query.path || VIDEO_FOLDERS[0];
+    
+    // Security: Validate path is within allowed folders
+    if (!isPathAllowed(folderPath)) {
+      return res.status(403).json({ error: 'Access denied: Path not in configured folders' });
+    }
+
+    const entries = await fs.readdir(folderPath, { withFileTypes: true });
+    
+    const folders = [];
+    const videos = [];
+    
+    for (const entry of entries) {
+      const fullPath = path.join(folderPath, entry.name);
+      
+      if (entry.isDirectory()) {
+        const stats = await fs.stat(fullPath);
+        folders.push({
+          name: entry.name,
+          path: fullPath,
+          modified: stats.mtime
+        });
+      } else if (entry.isFile()) {
+        const ext = path.extname(entry.name).toLowerCase();
+        if (VIDEO_EXTENSIONS.includes(ext)) {
+          const stats = await fs.stat(fullPath);
+          const baseName = path.basename(entry.name, ext);
+          
+          // Find subtitles
+          const subtitles = entries
+            .filter(e => {
+              if (!e.isFile()) return false;
+              const fileExt = path.extname(e.name).toLowerCase();
+              const fileBase = path.basename(e.name, fileExt);
+              return SUBTITLE_EXTENSIONS.includes(fileExt) && fileBase.startsWith(baseName);
+            })
+            .map(e => ({
+              filename: e.name,
+              path: path.join(folderPath, e.name),
+              language: extractLanguage(e.name),
+            }));
+          
+          videos.push({
+            id: Buffer.from(fullPath).toString('base64'),
+            title: baseName,
+            filename: entry.name,
+            path: fullPath,
+            folder: folderPath,
+            size: stats.size,
+            format: ext.slice(1),
+            modified: stats.mtime,
+            subtitles
+          });
+        }
+      }
+    }
+    
+    res.json({ folders, videos, currentPath: folderPath });
+  } catch (error) {
+    console.error('Error browsing folder:', error);
+    res.status(500).json({ error: 'Failed to browse folder' });
+  }
+});
+
 // Get configured folders
 app.get('/api/config/folders', (req, res) => {
   res.json({ folders: VIDEO_FOLDERS });
 });
 
-// Add new folder path (requires restart or can be made persistent)
+// Add new folder path
 app.post('/api/config/folders', express.json(), (req, res) => {
   const { folder } = req.body;
   
@@ -228,6 +338,22 @@ app.post('/api/config/folders', express.json(), (req, res) => {
   
   if (!VIDEO_FOLDERS.includes(folder)) {
     VIDEO_FOLDERS.push(folder);
+  }
+  
+  res.json({ success: true, folders: VIDEO_FOLDERS });
+});
+
+// Remove folder path from scanning
+app.delete('/api/config/folders', express.json(), (req, res) => {
+  const { folder } = req.body;
+  
+  if (!folder) {
+    return res.status(400).json({ error: 'Folder path required' });
+  }
+  
+  const index = VIDEO_FOLDERS.indexOf(folder);
+  if (index > -1) {
+    VIDEO_FOLDERS.splice(index, 1);
   }
   
   res.json({ success: true, folders: VIDEO_FOLDERS });

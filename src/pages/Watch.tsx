@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Share2 } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { EmbedDialog } from "@/components/EmbedDialog";

@@ -21,6 +21,19 @@ export interface Subtitle {
   language: string;
 }
 
+export interface Folder {
+  name: string;
+  path: string;
+  modified: string;
+}
+
+export interface BrowseResult {
+  folders: Folder[];
+  videos: Video[];
+  currentPath: string | null;
+  error?: string;
+}
+
 class LocalAPI {
   private baseUrl: string;
 
@@ -40,6 +53,17 @@ class LocalAPI {
     const response = await fetch(`${this.baseUrl}/api/videos/${id}`);
     if (!response.ok) {
       throw new Error('Failed to fetch video');
+    }
+    return response.json();
+  }
+
+  async browseFolders(path?: string): Promise<BrowseResult> {
+    const url = path 
+      ? `${this.baseUrl}/api/browse?path=${encodeURIComponent(path)}`
+      : `${this.baseUrl}/api/browse`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to browse folder');
     }
     return response.json();
   }
@@ -71,6 +95,21 @@ class LocalAPI {
     });
     if (!response.ok) {
       throw new Error('Failed to add folder');
+    }
+    const data = await response.json();
+    return data.folders;
+  }
+
+  async removeFolder(folder: string): Promise<string[]> {
+    const response = await fetch(`${this.baseUrl}/api/config/folders`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ folder }),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to remove folder');
     }
     const data = await response.json();
     return data.folders;

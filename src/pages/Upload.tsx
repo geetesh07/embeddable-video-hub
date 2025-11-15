@@ -26,30 +26,38 @@ export const Upload = () => {
             <h1 className="text-2xl font-bold mb-4">File-Based Video System</h1>
             <div className="text-left space-y-4 text-muted-foreground">
               <p>
-                This application uses a file-based system. To add videos:
+                This application uses a file-based system. Videos are automatically scanned from configured folders.
               </p>
-              <ol className="list-decimal list-inside space-y-2 ml-4">
-                <li>Copy your video files (.mp4, .mkv, .avi, .mov, .webm) to the configured folder</li>
-                <li>Add subtitle files (.srt, .vtt) with the same name as your video:
-                  <ul className="list-disc list-inside ml-6 mt-1">
-                    <li>Example: <code className="bg-secondary px-2 py-1 rounded">video.en.srt</code> for English subtitles</li>
-                    <li>Example: <code className="bg-secondary px-2 py-1 rounded">video.es.srt</code> for Spanish subtitles</li>
-                  </ul>
-                </li>
-                <li>The server will automatically detect and index your videos</li>
-                <li>Refresh the library to see new videos</li>
-              </ol>
               <div className="mt-6 p-4 bg-secondary rounded-lg">
-                <p className="font-semibold mb-2">Configured Folder:</p>
-                <code className="text-sm">/home/runner/$REPL_SLUG/videos</code>
+                <p className="font-semibold mb-2">To add videos:</p>
+                <ol className="list-decimal list-inside space-y-2 ml-4">
+                  <li>Copy your video files to the videos folder</li>
+                  <li>Add subtitle files with language codes (e.g., video.en.srt)</li>
+                  <li>Refresh the library to see new videos</li>
+                </ol>
+              </div>
+              <div className="mt-6 p-4 bg-secondary rounded-lg">
+                <p className="font-semibold mb-2">Manage Scan Paths:</p>
+                <p className="text-sm">
+                  Go to the <strong>Folders</strong> page to add or remove folder paths that the server scans for videos.
+                </p>
               </div>
             </div>
-            <Button
-              onClick={() => navigate("/")}
-              className="mt-8 shadow-glow"
-            >
-              Go to Library
-            </Button>
+            <div className="flex gap-3 mt-8">
+              <Button
+                onClick={() => navigate("/")}
+                className="flex-1 shadow-glow"
+              >
+                Go to Library
+              </Button>
+              <Button
+                onClick={() => navigate("/folders")}
+                variant="outline"
+                className="flex-1"
+              >
+                Manage Folders
+              </Button>
+            </div>
           </div>
         </Card>
       </div>
