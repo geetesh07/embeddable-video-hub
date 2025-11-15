@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import Plyr from "plyr-react";
 import "plyr-react/plyr.css";
 
@@ -14,17 +13,6 @@ interface VideoPlayerProps {
 }
 
 export const VideoPlayer = ({ videoUrl, subtitles = [], poster }: VideoPlayerProps) => {
-  const plyrRef = useRef<any>(null);
-
-  useEffect(() => {
-    // Plyr options for customization
-    const player = plyrRef.current?.plyr;
-    if (player) {
-      player.on("ready", () => {
-        console.log("Player is ready");
-      });
-    }
-  }, []);
 
   const plyrProps = {
     source: {
@@ -97,7 +85,7 @@ export const VideoPlayer = ({ videoUrl, subtitles = [], poster }: VideoPlayerPro
 
   return (
     <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg">
-      <Plyr ref={plyrRef} {...plyrProps} />
+      <Plyr {...plyrProps} />
     </div>
   );
 };
