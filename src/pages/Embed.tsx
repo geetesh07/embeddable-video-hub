@@ -1,37 +1,14 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { VideoPlayer } from "@/components/VideoPlayer";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 
 export const Embed = () => {
   const { id } = useParams();
 
   const { data: video, isLoading } = useQuery({
     queryKey: ["video", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("videos")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id,
-  });
-
-  const { data: subtitles } = useQuery({
-    queryKey: ["subtitles", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("subtitles")
-        .select("*")
-        .eq("video_id", id);
-
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => api.getVideo(id!),
     enabled: !!id,
   });
 
@@ -51,19 +28,19 @@ export const Embed = () => {
     );
   }
 
-  const subtitleTracks = subtitles?.map((sub) => ({
+  const subtitleTracks = video?.subtitles?.map((sub) => ({
     kind: "subtitles" as const,
-    label: sub.label,
+    label: sub.language.toUpperCase(),
     srcLang: sub.language,
-    src: sub.storage_path,
+    src: api.getSubtitleUrl(id!, sub.filename),
   }));
 
   return (
     <div className="w-full h-screen bg-black">
       <VideoPlayer
-        videoUrl={video.storage_path}
+        videoUrl={api.getVideoStreamUrl(id!)}
         subtitles={subtitleTracks}
-        poster={video.thumbnail_path}
+        poster={undefined}
       />
     </div>
   );

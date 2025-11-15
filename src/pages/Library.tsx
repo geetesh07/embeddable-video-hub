@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Search, Grid, List, Plus } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { VideoCard } from "@/components/VideoCard";
 import { EmbedDialog } from "@/components/EmbedDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -15,34 +15,15 @@ export const Library = () => {
   const [embedDialogOpen, setEmbedDialogOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ["videos"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("videos")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => api.getVideos(),
   });
 
-  const deleteVideoMutation = useMutation({
-    mutationFn: async (videoId: string) => {
-      const { error } = await supabase.from("videos").delete().eq("id", videoId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["videos"] });
-      toast.success("Video deleted successfully");
-    },
-    onError: () => {
-      toast.error("Failed to delete video");
-    },
-  });
+  const handleDelete = (videoId: string) => {
+    toast.error("Delete not supported for file-based videos");
+  };
 
   const filteredVideos = videos?.filter((video) =>
     video.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -110,11 +91,11 @@ export const Library = () => {
                 key={video.id}
                 id={video.id}
                 title={video.title}
-                thumbnail={video.thumbnail_path}
-                duration={video.duration}
-                viewCount={video.view_count}
-                createdAt={video.created_at}
-                onDelete={() => deleteVideoMutation.mutate(video.id)}
+                thumbnail={undefined}
+                duration={undefined}
+                viewCount={undefined}
+                createdAt={video.modified}
+                onDelete={() => handleDelete(video.id)}
                 onEmbed={() => handleEmbed(video)}
               />
             ))}
