@@ -1,73 +1,236 @@
-# Welcome to your Lovable project
+# VideoHub - Local Video Server
 
-## Project info
+A beautiful, production-ready video hosting platform that serves videos directly from your local folders. No uploads needed!
 
-**URL**: https://lovable.dev/projects/29c1664c-098d-4c58-b41f-812d36df9d32
+## 🎬 Features
 
-## How can I edit this code?
+- ✅ **Local File Serving** - Videos stay on your machine, no uploads required
+- ✅ **Automatic Folder Scanning** - Recursively scans video folders
+- ✅ **Multiple Formats** - Supports MP4, MKV, AVI, MOV, WebM
+- ✅ **Subtitle Support** - Automatic detection of .srt and .vtt files
+- ✅ **Beautiful UI** - Dark cinematic theme with smooth animations
+- ✅ **Embeddable Player** - Generate iframe codes for your LMS
+- ✅ **No Database** - Everything from filesystem
+- ✅ **Internet Ready** - Easy to expose via ngrok, Cloudflare, or port forwarding
 
-There are several ways of editing your application.
+## 🚀 Quick Start
 
-**Use Lovable**
+### 1. Start the Backend Server
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/29c1664c-098d-4c58-b41f-812d36df9d32) and start prompting.
+```bash
+cd server
+npm install
+cp .env.example .env
 
-Changes made via Lovable will be committed automatically to this repo.
+# Edit .env and add your video folder paths
+# Windows: VIDEO_FOLDERS=C:\Users\YourName\Videos,D:\Movies
+# Mac/Linux: VIDEO_FOLDERS=/Users/yourname/Videos,/media/movies
 
-**Use your preferred IDE**
+npm start
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Server runs on `http://localhost:3001`
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 2. Start the Frontend
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+# In the project root
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Frontend runs on `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 3. Configure Your Folders
 
-**Use GitHub Codespaces**
+1. Open `http://localhost:8080/settings`
+2. Add your video folder paths
+3. Videos will auto-scan every 30 seconds
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🌍 Expose to Internet
 
-## What technologies are used for this project?
+### Option 1: ngrok (Easiest - 2 minutes)
 
-This project is built with:
+```bash
+# Terminal 1: Run backend
+cd server && npm start
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Terminal 2: Expose via ngrok
+npx ngrok http 3001
+```
 
-## How can I deploy this project?
+You'll get a URL like `https://abc123.ngrok.io` - update your frontend `.env`:
 
-Simply open [Lovable](https://lovable.dev/projects/29c1664c-098d-4c58-b41f-812d36df9d32) and click on Share -> Publish.
+```env
+VITE_API_URL=https://abc123.ngrok.io
+```
 
-## Can I connect a custom domain to my Lovable project?
+### Option 2: Cloudflare Tunnel (Free + Permanent)
 
-Yes, you can!
+```bash
+# Install cloudflared
+# Then run:
+cloudflared tunnel --url http://localhost:3001
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Option 3: Port Forwarding (For Custom Domain)
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+1. **Router Setup**: Forward external port 80/443 → your PC port 3001
+2. **Find IP**: Visit whatismyip.com
+3. **Dynamic DNS**: Use No-IP or DuckDNS for permanent URL
+4. **HTTPS**: Use Caddy for automatic SSL
+
+```bash
+# Install Caddy
+caddy reverse-proxy --from yourdomain.com --to localhost:3001
+```
+
+## 📁 Folder Structure
+
+```
+/
+├── server/              # Node.js backend
+│   ├── index.js        # Main server file
+│   ├── package.json    # Server dependencies
+│   └── .env            # Server configuration
+├── src/
+│   ├── pages/          # Frontend pages
+│   ├── components/     # React components
+│   └── lib/
+│       └── api.ts      # API client
+└── videos/             # Example video folder (configure your own)
+```
+
+## 🎥 Video Organization
+
+The server automatically detects:
+
+```
+/Videos/
+├── Course 1/
+│   ├── 001 Welcome.mp4
+│   ├── 001 Welcome.en.srt
+│   ├── 001 Welcome.es.srt
+│   ├── 002 Introduction.mp4
+│   └── 002 Introduction.en.vtt
+└── Course 2/
+    └── Lesson 1.mkv
+```
+
+Subtitles naming:
+- `videoname.en.srt` - English
+- `videoname.es.srt` - Spanish  
+- `videoname.fr.vtt` - French
+
+## 🔧 Environment Variables
+
+### Backend (`server/.env`)
+
+```env
+PORT=3001
+VIDEO_FOLDERS=/path/to/videos1,/path/to/videos2
+```
+
+### Frontend (`.env`)
+
+```env
+VITE_API_URL=http://localhost:3001
+# or for production:
+# VITE_API_URL=https://your-domain.com
+```
+
+## 📡 API Endpoints
+
+```
+GET  /api/videos              - List all videos
+GET  /api/videos/:id          - Get video details
+GET  /api/stream/:id          - Stream video (range requests supported)
+GET  /api/subtitles/:id/:file - Get subtitle file
+GET  /api/config/folders      - Get configured folders
+POST /api/config/folders      - Add new folder
+GET  /api/health              - Server health check
+```
+
+## 🎨 Customization
+
+### Change Theme
+
+Edit `src/index.css` to customize colors:
+
+```css
+:root {
+  --primary: 188 94% 55%;     /* Electric cyan */
+  --accent: 270 70% 65%;      /* Purple */
+  --background: 220 26% 7%;   /* Dark navy */
+}
+```
+
+### Add Custom Domain
+
+1. Point your domain's A record to your server IP
+2. Setup SSL with Caddy or nginx
+3. Update `.env` with your domain URL
+
+## 🔒 Security Notes
+
+- **Public Access**: Current setup allows anyone with the URL to view videos
+- **Authentication**: Add auth middleware to Express if needed
+- **Firewall**: Only open necessary ports
+- **HTTPS**: Always use HTTPS for production (ngrok/Cloudflare include this)
+
+## 📱 Embed in LMS
+
+1. Click any video → "Get Embed Code"
+2. Copy the iframe code
+3. Paste in your LMS (Canvas, Moodle, Blackboard, etc.)
+
+```html
+<iframe 
+  src="https://your-url.com/embed/VIDEO_ID" 
+  width="640" 
+  height="360" 
+  frameborder="0" 
+  allowfullscreen>
+</iframe>
+```
+
+## 🐛 Troubleshooting
+
+**Backend not starting?**
+- Check port 3001 isn't in use: `lsof -i :3001`
+- Verify folder paths in `.env` exist
+
+**Videos not showing?**
+- Check server logs for scan errors
+- Verify video formats are supported
+- Ensure read permissions on folders
+
+**Can't access from internet?**
+- Check firewall allows port 3001
+- Verify ngrok/cloudflared is running
+- Test locally first
+
+## 📚 Tech Stack
+
+- **Backend**: Node.js + Express
+- **Frontend**: React + TypeScript + Vite
+- **Video Player**: Plyr
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui
+
+## 🤝 Contributing
+
+Want to add features? Ideas:
+- Thumbnail generation
+- Video transcoding
+- User authentication
+- View analytics
+- Playlist support
+
+## 📄 License
+
+MIT License - Use freely for personal or commercial projects!
+
+---
+
+Built with ❤️ for easy video hosting
