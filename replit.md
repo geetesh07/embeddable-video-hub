@@ -12,6 +12,17 @@ The application consists of two main components:
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### November 15, 2025 - Project Migration & Cleanup
+- ✅ Migrated from Lovable to Replit environment
+- ✅ Configured Vite to run on port 5000 with proper Replit host configuration
+- ✅ **Removed Supabase dependencies** - Not needed for local-first architecture
+- ✅ Cleaned up unused cloud-based pages (Index, Library, Upload, Watch, Embed, Folders)
+- ✅ Added folder segregation feature with collapsible folder sections
+- ✅ Implemented 5 sorting options: Folder (A-Z), Name (A-Z/Z-A), Date (Newest/Oldest)
+- ✅ Folders now intelligently order based on selected sort option
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -91,7 +102,6 @@ The application deliberately avoids using a database. Instead:
 - **Replit deployment**: Configured for hosting on Replit platform
 
 **Third-Party Integrations:**
-- **Supabase SDK** (included but not actively used in local-first architecture)
 - Video player supports standard HTML5 video capabilities
 - Subtitle rendering via WebVTT/SRT standards
 

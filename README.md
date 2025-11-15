@@ -217,6 +217,8 @@ Edit `src/index.css` to customize colors:
 - **Video Player**: Plyr
 - **Styling**: Tailwind CSS
 - **UI Components**: shadcn/ui
+- **State Management**: TanStack Query
+- **Routing**: React Router
 
 ## 🤝 Contributing
 
