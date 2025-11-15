@@ -78,8 +78,22 @@ export const LocalLibrary = () => {
       grouped.get(folderName)!.push(video);
     });
 
-    // Sort folder names alphabetically
-    return new Map([...grouped.entries()].sort((a, b) => a[0].localeCompare(b[0])));
+    // Sort folders based on the selected sort option
+    // Preserve the order of folders as they appear in sortedVideos
+    const folderOrder = new Map<string, number>();
+    sortedVideos.forEach((video, index) => {
+      const folderName = video.folder || 'Root';
+      if (!folderOrder.has(folderName)) {
+        folderOrder.set(folderName, index);
+      }
+    });
+
+    // Sort folders by the order their first video appears in sortedVideos
+    return new Map([...grouped.entries()].sort((a, b) => {
+      const orderA = folderOrder.get(a[0]) || 0;
+      const orderB = folderOrder.get(b[0]) || 0;
+      return orderA - orderB;
+    }));
   }, [filteredVideos, sortBy]);
 
   const toggleFolder = (folderName: string) => {
