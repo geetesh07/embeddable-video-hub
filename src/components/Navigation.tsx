@@ -8,8 +8,7 @@ export const Navigation = () => {
 
   const navItems = [
     { icon: Home, label: "Library", path: "/" },
-    { icon: Upload, label: "Upload", path: "/upload" },
-    { icon: Folder, label: "Folders", path: "/folders" },
+    { icon: Folder, label: "Settings", path: "/settings" },
   ];
 
   return (
