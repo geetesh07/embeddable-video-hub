@@ -22,15 +22,21 @@ Preferred communication style: Simple, everyday language.
   - Search and filter through all videos
   - Copy individual embed codes with one click
   - Copy all embed codes at once
-  - Download all embed codes as HTML file
+  - **Multi-Format Export**: Download as HTML, TXT, or CSV (Excel-compatible)
+  - Video names prominently displayed in all export formats
   - All codes ready for LMS integration
 - ✅ **Folder-Specific Embed Codes**: On-demand embed code generation for current folder
   - "Get Embed Codes for This Folder" button appears when browsing folders with videos
   - Shows only videos from the current folder path (e.g., when in folder 1/2/3/4, shows only those videos)
   - Copy individual or all codes for that folder
-  - Download folder-specific codes as HTML file
+  - **Multi-Format Export**: Download folder-specific codes as HTML, TXT, or CSV
   - Perfect for organizing embed codes by folder structure
 - ✅ **Enhanced Navigation**: Fixed NavLink component to properly display icons in navigation bar
+- ✅ **Embed Security**: CSP frame-ancestors and X-Frame-Options headers to control which domains can embed videos
+  - Default allowed domain: https://lms.ntechnosolution.com
+  - Settings page for managing allowed domains
+  - File-based config.json for domain allowlist
+  - API endpoints for adding/removing allowed domains
 
 ### November 16, 2025 - Advanced LMS Features & Gamification System
 - ✅ **Enhanced Thumbnail System**: Improved FFmpeg-based thumbnail generation with better error handling and logging
