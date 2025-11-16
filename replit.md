@@ -14,6 +14,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### November 16, 2025 - Enhanced Embed Code Features & Navigation
+- ✅ **1920x1080 Embed Resolution**: Updated all embed codes to use full HD resolution (1920x1080) instead of 640x360
+- ✅ **Improved Copy Functionality**: Enhanced clipboard copy with async/await and proper error handling
+- ✅ **Breadcrumb Navigation**: Added breadcrumbs to video watch pages for easy navigation back to library
+- ✅ **Bulk Embed Codes Page**: New dedicated page showing all videos with their embed codes
+  - Search and filter through all videos
+  - Copy individual embed codes with one click
+  - Copy all embed codes at once
+  - Download all embed codes as HTML file
+  - All codes ready for LMS integration
+- ✅ **Enhanced Navigation**: Fixed NavLink component to properly display icons in navigation bar
+
 ### November 16, 2025 - Advanced LMS Features & Gamification System
 - ✅ **Enhanced Thumbnail System**: Improved FFmpeg-based thumbnail generation with better error handling and logging
 - ✅ **Achievements & Badges System**: 

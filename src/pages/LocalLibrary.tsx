@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Folder as FolderIcon, ChevronRight, Home } from "lucide-react";
+import { Loader2, Folder as FolderIcon, ChevronRight, Home, Code2 } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { VideoCard } from "@/components/VideoCard";
+import { FolderEmbedDialog } from "@/components/FolderEmbedDialog";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
@@ -12,6 +13,7 @@ export const LocalLibrary = () => {
   const [pathHistory, setPathHistory] = useState<Array<{ name: string; path: string | null }>>([
     { name: "Home", path: null }
   ]);
+  const [embedDialogOpen, setEmbedDialogOpen] = useState(false);
 
   const { data: browseData, isLoading } = useQuery({
     queryKey: ["browse", currentPath],
@@ -91,7 +93,17 @@ export const LocalLibrary = () => {
             {/* Videos */}
             {browseData?.videos && browseData.videos.length > 0 && (
               <div>
-                <h2 className="text-xl font-semibold mb-4">Videos</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">Videos</h2>
+                  <Button
+                    onClick={() => setEmbedDialogOpen(true)}
+                    variant="outline"
+                    className="shadow-glow"
+                  >
+                    <Code2 className="w-4 h-4 mr-2" />
+                    Get Embed Codes for This Folder
+                  </Button>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {browseData.videos.map((video) => (
                     <VideoCard
@@ -122,6 +134,13 @@ export const LocalLibrary = () => {
           </div>
         )}
       </div>
+
+      <FolderEmbedDialog
+        open={embedDialogOpen}
+        onOpenChange={setEmbedDialogOpen}
+        videos={browseData?.videos || []}
+        folderPath={currentPath}
+      />
     </div>
   );
 };
