@@ -19,6 +19,8 @@ app.use(express.json());
 // Configuration file paths
 const configPath = path.join(__dirname, 'config.json');
 const progressPath = path.join(__dirname, 'progress.json');
+const achievementsPath = path.join(__dirname, 'achievements.json');
+const learningStatsPath = path.join(__dirname, 'learning-stats.json');
 const thumbnailsDir = path.join(__dirname, 'thumbnails');
 
 // Initialize config file if it doesn't exist
@@ -29,6 +31,43 @@ if (!fsSync.existsSync(configPath)) {
 // Initialize progress file if it doesn't exist
 if (!fsSync.existsSync(progressPath)) {
   fsSync.writeFileSync(progressPath, JSON.stringify({}, null, 2));
+}
+
+// Initialize achievements file if it doesn't exist
+if (!fsSync.existsSync(achievementsPath)) {
+  const initialAchievements = {
+    unlocked: [],
+    availableAchievements: [
+      { id: 'first_video', name: 'First Steps', description: 'Watch your first video', icon: '🎬', requirement: 1 },
+      { id: 'video_marathon_5', name: 'Getting Started', description: 'Complete 5 videos', icon: '🏃', requirement: 5 },
+      { id: 'video_marathon_10', name: 'Committed Learner', description: 'Complete 10 videos', icon: '🎯', requirement: 10 },
+      { id: 'video_marathon_25', name: 'Knowledge Seeker', description: 'Complete 25 videos', icon: '🔥', requirement: 25 },
+      { id: 'video_marathon_50', name: 'Master Student', description: 'Complete 50 videos', icon: '👑', requirement: 50 },
+      { id: 'streak_3', name: '3-Day Streak', description: 'Learn for 3 days in a row', icon: '⚡', requirement: 3 },
+      { id: 'streak_7', name: 'Week Warrior', description: 'Learn for 7 days in a row', icon: '🔥', requirement: 7 },
+      { id: 'streak_30', name: 'Monthly Champion', description: 'Learn for 30 days in a row', icon: '🏆', requirement: 30 },
+      { id: 'speedster', name: 'Speedster', description: 'Complete 5 videos in one day', icon: '⚡', requirement: 5 },
+      { id: 'night_owl', name: 'Night Owl', description: 'Watch a video after 10 PM', icon: '🦉', requirement: 1 }
+    ]
+  };
+  fsSync.writeFileSync(achievementsPath, JSON.stringify(initialAchievements, null, 2));
+}
+
+// Initialize learning stats file if it doesn't exist
+if (!fsSync.existsSync(learningStatsPath)) {
+  const initialStats = {
+    totalVideosCompleted: 0,
+    totalWatchTime: 0,
+    currentStreak: 0,
+    longestStreak: 0,
+    lastActivityDate: null,
+    dailyGoal: 3,
+    videosCompletedToday: 0,
+    points: 0,
+    level: 1,
+    activityLog: []
+  };
+  fsSync.writeFileSync(learningStatsPath, JSON.stringify(initialStats, null, 2));
 }
 
 // Create thumbnails directory if it doesn't exist
@@ -72,13 +111,170 @@ function getVideoProgress(videoId) {
 
 function updateVideoProgress(videoId, data) {
   const progress = getProgress();
+  const wasCompleted = progress[videoId]?.completed || false;
+  const isNowCompleted = data.completed || false;
+  
   progress[videoId] = {
     ...progress[videoId],
     ...data,
     lastWatched: new Date().toISOString()
   };
   saveProgress(progress);
+  
+  // Check if video was just completed (not already completed)
+  if (isNowCompleted && !wasCompleted) {
+    updateLearningStats(videoId, data);
+    checkAchievements();
+  }
+  
   return progress[videoId];
+}
+
+// Learning Stats Functions
+function getLearningStats() {
+  try {
+    const data = fsSync.readFileSync(learningStatsPath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    return {
+      totalVideosCompleted: 0,
+      totalWatchTime: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      lastActivityDate: null,
+      dailyGoal: 3,
+      videosCompletedToday: 0,
+      points: 0,
+      level: 1,
+      activityLog: []
+    };
+  }
+}
+
+function saveLearningStats(stats) {
+  fsSync.writeFileSync(learningStatsPath, JSON.stringify(stats, null, 2));
+}
+
+function updateLearningStats(videoId, progressData) {
+  const stats = getLearningStats();
+  const today = new Date().toISOString().split('T')[0];
+  const lastActivityDate = stats.lastActivityDate ? stats.lastActivityDate.split('T')[0] : null;
+  
+  // Update streak
+  if (lastActivityDate === today) {
+    // Same day, just update count
+    stats.videosCompletedToday += 1;
+  } else {
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    if (lastActivityDate === yesterday) {
+      // Consecutive day
+      stats.currentStreak += 1;
+      stats.videosCompletedToday = 1;
+    } else if (lastActivityDate) {
+      // Streak broken
+      stats.currentStreak = 1;
+      stats.videosCompletedToday = 1;
+    } else {
+      // First activity
+      stats.currentStreak = 1;
+      stats.videosCompletedToday = 1;
+    }
+  }
+  
+  // Update longest streak
+  if (stats.currentStreak > stats.longestStreak) {
+    stats.longestStreak = stats.currentStreak;
+  }
+  
+  // Update totals
+  stats.totalVideosCompleted += 1;
+  stats.lastActivityDate = new Date().toISOString();
+  
+  // Award points
+  const basePoints = 10;
+  const streakBonus = stats.currentStreak * 2;
+  stats.points += basePoints + streakBonus;
+  
+  // Calculate level (every 100 points = 1 level)
+  stats.level = Math.floor(stats.points / 100) + 1;
+  
+  // Add to activity log
+  stats.activityLog.unshift({
+    videoId,
+    timestamp: new Date().toISOString(),
+    points: basePoints + streakBonus,
+    type: 'video_completed'
+  });
+  
+  // Keep only last 100 activities
+  if (stats.activityLog.length > 100) {
+    stats.activityLog = stats.activityLog.slice(0, 100);
+  }
+  
+  saveLearningStats(stats);
+  return stats;
+}
+
+// Achievement Functions
+function getAchievements() {
+  try {
+    const data = fsSync.readFileSync(achievementsPath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    return { unlocked: [], availableAchievements: [] };
+  }
+}
+
+function saveAchievements(achievements) {
+  fsSync.writeFileSync(achievementsPath, JSON.stringify(achievements, null, 2));
+}
+
+function checkAchievements() {
+  const achievements = getAchievements();
+  const stats = getLearningStats();
+  const newlyUnlocked = [];
+  
+  achievements.availableAchievements.forEach(achievement => {
+    const isUnlocked = achievements.unlocked.some(a => a.id === achievement.id);
+    if (isUnlocked) return;
+    
+    let shouldUnlock = false;
+    
+    if (achievement.id.startsWith('video_marathon_')) {
+      shouldUnlock = stats.totalVideosCompleted >= achievement.requirement;
+    } else if (achievement.id === 'first_video') {
+      shouldUnlock = stats.totalVideosCompleted >= 1;
+    } else if (achievement.id.startsWith('streak_')) {
+      shouldUnlock = stats.currentStreak >= achievement.requirement;
+    } else if (achievement.id === 'speedster') {
+      shouldUnlock = stats.videosCompletedToday >= achievement.requirement;
+    } else if (achievement.id === 'night_owl') {
+      const hour = new Date().getHours();
+      shouldUnlock = hour >= 22 || hour < 6;
+    }
+    
+    if (shouldUnlock) {
+      const unlockedAchievement = {
+        ...achievement,
+        unlockedAt: new Date().toISOString()
+      };
+      achievements.unlocked.push(unlockedAchievement);
+      newlyUnlocked.push(unlockedAchievement);
+      
+      // Award bonus points for achievement
+      stats.points += 50;
+      stats.activityLog.unshift({
+        achievementId: achievement.id,
+        timestamp: new Date().toISOString(),
+        points: 50,
+        type: 'achievement_unlocked'
+      });
+      saveLearningStats(stats);
+    }
+  });
+  
+  saveAchievements(achievements);
+  return newlyUnlocked;
 }
 
 // Generate video thumbnail
@@ -92,17 +288,23 @@ async function generateThumbnail(videoPath, videoId) {
       return;
     }
 
+    console.log(`Generating thumbnail for: ${videoPath}`);
+    
     ffmpeg(videoPath)
       .screenshots({
-        timestamps: ['10%'],
+        timestamps: ['5%'],
         filename: `${videoId}.jpg`,
         folder: thumbnailsDir,
         size: '640x360'
       })
-      .on('end', () => resolve(thumbnailPath))
+      .on('end', () => {
+        console.log(`✅ Thumbnail generated: ${videoId}.jpg`);
+        resolve(thumbnailPath);
+      })
       .on('error', (err) => {
-        console.error('Thumbnail generation error:', err);
-        reject(err);
+        console.error(`❌ Thumbnail generation failed for ${videoId}:`, err.message);
+        // Return a placeholder path instead of rejecting
+        resolve(null);
       });
   });
 }
@@ -490,6 +692,41 @@ app.delete('/api/progress/:id', (req, res) => {
     progress: 0
   });
   res.json(updated);
+});
+
+// LMS Endpoints - Achievements
+app.get('/api/achievements', (req, res) => {
+  const achievements = getAchievements();
+  res.json(achievements);
+});
+
+app.get('/api/achievements/check', (req, res) => {
+  const newlyUnlocked = checkAchievements();
+  res.json({ newlyUnlocked });
+});
+
+// LMS Endpoints - Learning Stats
+app.get('/api/stats', (req, res) => {
+  const stats = getLearningStats();
+  res.json(stats);
+});
+
+app.post('/api/stats/goal', (req, res) => {
+  const { dailyGoal } = req.body;
+  const stats = getLearningStats();
+  stats.dailyGoal = dailyGoal;
+  saveLearningStats(stats);
+  res.json(stats);
+});
+
+app.get('/api/leaderboard', (req, res) => {
+  const stats = getLearningStats();
+  res.json({
+    level: stats.level,
+    points: stats.points,
+    rank: 1,
+    totalUsers: 1
+  });
 });
 
 app.listen(PORT, () => {

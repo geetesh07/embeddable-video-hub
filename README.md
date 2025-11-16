@@ -1,51 +1,82 @@
-# VideoHub - Local Video Server
+# VideoHub - Local Video LMS
 
-A beautiful, production-ready video hosting platform that serves videos directly from your local folders. No uploads needed!
+A beautiful, production-ready video learning platform with LMS features like achievements, streaks, and progress tracking. Serves videos directly from your local folders - no uploads needed!
 
 ## 🎬 Features
 
+### Core Features
 - ✅ **Local File Serving** - Videos stay on your machine, no uploads required
 - ✅ **Automatic Folder Scanning** - Recursively scans video folders
 - ✅ **Multiple Formats** - Supports MP4, MKV, AVI, MOV, WebM
 - ✅ **Subtitle Support** - Automatic detection of .srt and .vtt files
+- ✅ **Thumbnail Generation** - Automatic FFmpeg-powered video thumbnails
 - ✅ **Beautiful UI** - Dark cinematic theme with smooth animations
 - ✅ **Embeddable Player** - Generate iframe codes for your LMS
-- ✅ **No Database** - Everything from filesystem
+- ✅ **No Database** - Everything from filesystem (JSON files)
 - ✅ **Internet Ready** - Easy to expose via ngrok, Cloudflare, or port forwarding
+
+### LMS & Gamification Features  
+- 🏆 **Achievements & Badges** - Unlock achievements as you learn
+- 🔥 **Learning Streaks** - Track consecutive days of learning
+- 📊 **Progress Tracking** - Monitor completion status for every video
+- ⭐ **Points & Levels** - Earn points and level up as you complete videos
+- 🎯 **Daily Goals** - Set and track daily learning targets
+- 📈 **Learning Stats** - View total watch time, videos completed, and more
+- 🏅 **Rewards System** - Get bonus points for achievements and streaks
 
 ## 🚀 Quick Start
 
-### 1. Start the Backend Server
+### Option 1: Run Everything at Once (Recommended)
 
 ```bash
-cd server
+# Install all dependencies
 npm install
-cp .env.example .env
 
-# Edit .env and add your video folder paths
-# Windows: VIDEO_FOLDERS=C:\Users\YourName\Videos,D:\Movies
-# Mac/Linux: VIDEO_FOLDERS=/Users/yourname/Videos,/media/movies
-
+# Start both frontend and backend together
 npm start
 ```
 
-Server runs on `http://localhost:3001`
+### Option 2: Windows Batch File
 
-### 2. Start the Frontend
+Create a file named `start.bat` in the project root with this code:
 
+```batch
+@echo off
+echo Starting VideoHub LMS...
+echo.
+echo Starting Frontend and Backend servers...
+start "Frontend" cmd /k "npm run dev"
+timeout /t 2 /nobreak >nul
+start "Backend" cmd /k "cd server && npm start"
+echo.
+echo Both servers are starting in separate windows...
+echo Frontend: http://localhost:5000
+echo Backend: http://localhost:3001
+pause
+```
+
+Then just double-click `start.bat` to run both servers!
+
+### Option 3: Manual Start (Separate Terminals)
+
+**Terminal 1 - Frontend:**
 ```bash
-# In the project root
 npm install
 npm run dev
 ```
 
-Frontend runs on `http://localhost:8080`
+**Terminal 2 - Backend:**
+```bash
+cd server
+npm install
+npm start
+```
 
-### 3. Configure Your Folders
+### 4. Configure Your Video Folders
 
-1. Open `http://localhost:8080/settings`
+1. Open `http://localhost:5000/settings`
 2. Add your video folder paths
-3. Videos will auto-scan every 30 seconds
+3. Videos will be scanned immediately
 
 ## 🌍 Expose to Internet
 
@@ -141,14 +172,36 @@ VITE_API_URL=http://localhost:3001
 
 ## 📡 API Endpoints
 
+### Video Endpoints
 ```
 GET  /api/videos              - List all videos
 GET  /api/videos/:id          - Get video details
 GET  /api/stream/:id          - Stream video (range requests supported)
 GET  /api/subtitles/:id/:file - Get subtitle file
+GET  /api/thumbnails/:id.jpg  - Get video thumbnail (auto-generated)
+POST /api/thumbnail/:id       - Manually generate thumbnail
 GET  /api/config/folders      - Get configured folders
 POST /api/config/folders      - Add new folder
+DELETE /api/config/folders    - Remove folder
 GET  /api/health              - Server health check
+```
+
+### Progress & Learning Endpoints
+```
+GET  /api/progress            - Get all video progress
+GET  /api/progress/:id        - Get progress for specific video
+POST /api/progress/:id        - Update video progress
+POST /api/progress/:id/complete - Mark video as complete
+DELETE /api/progress/:id      - Reset video progress
+```
+
+### LMS Endpoints (New!)
+```
+GET  /api/stats               - Get learning statistics
+POST /api/stats/goal          - Update daily learning goal
+GET  /api/achievements        - Get all achievements (locked & unlocked)
+GET  /api/achievements/check  - Check for newly unlocked achievements
+GET  /api/leaderboard         - Get leaderboard info (points, level, rank)
 ```
 
 ## 🎨 Customization

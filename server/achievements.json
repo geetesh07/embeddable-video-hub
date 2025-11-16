@@ -1,0 +1,75 @@
+{
+  "unlocked": [],
+  "availableAchievements": [
+    {
+      "id": "first_video",
+      "name": "First Steps",
+      "description": "Watch your first video",
+      "icon": "🎬",
+      "requirement": 1
+    },
+    {
+      "id": "video_marathon_5",
+      "name": "Getting Started",
+      "description": "Complete 5 videos",
+      "icon": "🏃",
+      "requirement": 5
+    },
+    {
+      "id": "video_marathon_10",
+      "name": "Committed Learner",
+      "description": "Complete 10 videos",
+      "icon": "🎯",
+      "requirement": 10
+    },
+    {
+      "id": "video_marathon_25",
+      "name": "Knowledge Seeker",
+      "description": "Complete 25 videos",
+      "icon": "🔥",
+      "requirement": 25
+    },
+    {
+      "id": "video_marathon_50",
+      "name": "Master Student",
+      "description": "Complete 50 videos",
+      "icon": "👑",
+      "requirement": 50
+    },
+    {
+      "id": "streak_3",
+      "name": "3-Day Streak",
+      "description": "Learn for 3 days in a row",
+      "icon": "⚡",
+      "requirement": 3
+    },
+    {
+      "id": "streak_7",
+      "name": "Week Warrior",
+      "description": "Learn for 7 days in a row",
+      "icon": "🔥",
+      "requirement": 7
+    },
+    {
+      "id": "streak_30",
+      "name": "Monthly Champion",
+      "description": "Learn for 30 days in a row",
+      "icon": "🏆",
+      "requirement": 30
+    },
+    {
+      "id": "speedster",
+      "name": "Speedster",
+      "description": "Complete 5 videos in one day",
+      "icon": "⚡",
+      "requirement": 5
+    },
+    {
+      "id": "night_owl",
+      "name": "Night Owl",
+      "description": "Watch a video after 10 PM",
+      "icon": "🦉",
+      "requirement": 1
+    }
+  ]
+}
