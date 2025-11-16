@@ -7,6 +7,7 @@ import { LocalLibrary } from "./pages/LocalLibrary";
 import { LocalWatch } from "./pages/LocalWatch";
 import { LocalEmbed } from "./pages/LocalEmbed";
 import { Settings } from "./pages/Settings";
+import { Folders } from "./pages/Folders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,8 +22,8 @@ const App = () => (
           <Route path="/" element={<LocalLibrary />} />
           <Route path="/watch/:id" element={<LocalWatch />} />
           <Route path="/embed/:id" element={<LocalEmbed />} />
+          <Route path="/folders" element={<Folders />} />
           <Route path="/settings" element={<Settings />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
