@@ -14,6 +14,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### November 16, 2025 - LMS Features: Thumbnails & Progress Tracking
+- ✅ **Video Thumbnails**: Automatic thumbnail generation using ffmpeg with lazy loading
+- ✅ **Progress Tracking**: JSON-based watch progress system (no database needed)
+  - Track watched status, completion, and progress percentage per video
+  - Visual indicators: completion badges, progress bars, "In Progress" tags
+  - Mark videos as complete/incomplete from video card menu
+- ✅ **LMS-Ready**: Full Learning Management System capabilities without needing a database
+- ✅ All data persisted in JSON files (progress.json) for simplicity
+
 ### November 16, 2025 - Complete Migration to Replit
 - ✅ Installed all dependencies for frontend and server
 - ✅ Fixed server to use ES6 module syntax (import/export)
