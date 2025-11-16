@@ -25,7 +25,10 @@ const thumbnailsDir = path.join(__dirname, 'thumbnails');
 
 // Initialize config file if it doesn't exist
 if (!fsSync.existsSync(configPath)) {
-  fsSync.writeFileSync(configPath, JSON.stringify({ folders: [] }, null, 2));
+  fsSync.writeFileSync(configPath, JSON.stringify({ 
+    folders: [],
+    allowedEmbedDomains: ['https://lms.ntechnosolution.com']
+  }, null, 2));
 }
 
 // Initialize progress file if it doesn't exist
@@ -75,19 +78,69 @@ if (!fsSync.existsSync(thumbnailsDir)) {
   fsSync.mkdirSync(thumbnailsDir, { recursive: true });
 }
 
-// Read video folders from config
-function getConfigFolders() {
+// Read config
+function getConfig() {
   try {
     const config = JSON.parse(fsSync.readFileSync(configPath, 'utf8'));
-    return config.folders || [];
+    return config;
   } catch (error) {
-    return [];
+    return { folders: [], allowedEmbedDomains: ['https://lms.ntechnosolution.com'] };
   }
+}
+
+// Save config
+function saveConfig(config) {
+  fsSync.writeFileSync(configPath, JSON.stringify(config, null, 2));
+}
+
+// Read video folders from config
+function getConfigFolders() {
+  const config = getConfig();
+  return config.folders || [];
 }
 
 // Save folders to config
 function saveConfigFolders(folders) {
-  fsSync.writeFileSync(configPath, JSON.stringify({ folders }, null, 2));
+  const config = getConfig();
+  config.folders = folders;
+  saveConfig(config);
+}
+
+// Get allowed embed domains
+function getAllowedEmbedDomains() {
+  const config = getConfig();
+  return config.allowedEmbedDomains || ['https://lms.ntechnosolution.com'];
+}
+
+// Save allowed embed domains
+function saveAllowedEmbedDomains(domains) {
+  const config = getConfig();
+  config.allowedEmbedDomains = domains;
+  saveConfig(config);
+}
+
+// Middleware to set CSP headers for embed security
+function setEmbedSecurityHeaders(req, res, next) {
+  const allowedDomains = getAllowedEmbedDomains();
+  
+  // Build CSP frame-ancestors directive
+  const frameAncestors = allowedDomains.length > 0 
+    ? `frame-ancestors 'self' ${allowedDomains.join(' ')};`
+    : `frame-ancestors 'none';`;
+  
+  res.setHeader('Content-Security-Policy', frameAncestors);
+  
+  // Set X-Frame-Options for older browsers
+  // Note: X-Frame-Options doesn't support allowlists like CSP does
+  // If allowlist is configured, we skip X-Frame-Options to let CSP handle it
+  // This prevents blocking allowed domains in older browsers
+  if (allowedDomains.length === 0) {
+    res.setHeader('X-Frame-Options', 'DENY');
+  }
+  // If domains are allowed, we don't set X-Frame-Options at all
+  // to avoid conflicts with the CSP allowlist
+  
+  next();
 }
 
 // Progress tracking functions
@@ -485,8 +538,8 @@ app.get('/api/browse', async (req, res) => {
   }
 });
 
-// Stream video
-app.get('/api/stream/:id', async (req, res) => {
+// Stream video (with embed security)
+app.get('/api/stream/:id', setEmbedSecurityHeaders, async (req, res) => {
   const videos = await scanVideoFolders();
   const video = videos.find(v => v.id === req.params.id);
   
@@ -581,6 +634,49 @@ app.delete('/api/config/folders', (req, res) => {
   saveConfigFolders(folders);
   
   res.json({ folders });
+});
+
+// Get allowed embed domains
+app.get('/api/config/embed-domains', (req, res) => {
+  const domains = getAllowedEmbedDomains();
+  res.json({ domains });
+});
+
+// Add allowed embed domain
+app.post('/api/config/embed-domains', (req, res) => {
+  const { domain } = req.body;
+  
+  if (!domain) {
+    return res.status(400).json({ error: 'Domain is required' });
+  }
+  
+  // Validate domain format (must start with http:// or https://)
+  if (!domain.startsWith('http://') && !domain.startsWith('https://')) {
+    return res.status(400).json({ error: 'Domain must start with http:// or https://' });
+  }
+  
+  const domains = getAllowedEmbedDomains();
+  if (!domains.includes(domain)) {
+    domains.push(domain);
+    saveAllowedEmbedDomains(domains);
+  }
+  
+  res.json({ domains });
+});
+
+// Remove allowed embed domain
+app.delete('/api/config/embed-domains', (req, res) => {
+  const { domain } = req.body;
+  
+  if (!domain) {
+    return res.status(400).json({ error: 'Domain is required' });
+  }
+  
+  let domains = getAllowedEmbedDomains();
+  domains = domains.filter(d => d !== domain);
+  saveAllowedEmbedDomains(domains);
+  
+  res.json({ domains });
 });
 
 // Health check
@@ -729,7 +825,22 @@ app.get('/api/leaderboard', (req, res) => {
   });
 });
 
+// Apply embed security headers to all HTML responses
+// This will protect the embed page when served in production
+app.use((req, res, next) => {
+  // Only apply to HTML responses (including the embed page)
+  const originalSend = res.send;
+  res.send = function(data) {
+    if (res.get('Content-Type')?.includes('text/html')) {
+      setEmbedSecurityHeaders(req, res, () => {});
+    }
+    return originalSend.call(this, data);
+  };
+  next();
+});
+
 app.listen(PORT, () => {
   console.log(`Video server running on http://localhost:${PORT}`);
   console.log(`Configured folders: ${getConfigFolders().length}`);
+  console.log(`Embed security enabled for: ${getAllowedEmbedDomains().join(', ')}`);
 });

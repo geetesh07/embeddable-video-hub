@@ -1,12 +1,18 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Copy, Check, Code2, Search, Download } from "lucide-react";
+import { Copy, Check, Code2, Search, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -60,15 +66,37 @@ export const BulkEmbedCodes = () => {
     }
   };
 
-  const downloadAllEmbedCodes = () => {
-    const allCodes = filteredVideos
-      .map((video) => {
-        const embedCode = getEmbedCode(video.id, video.title);
-        return `<!-- ${video.title} -->\n${embedCode}\n`;
-      })
-      .join("\n");
+  const downloadAsHTML = () => {
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Embed Codes</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .video-section { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .video-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #333; }
+        .embed-code { background: #f0f0f0; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 12px; word-wrap: break-word; }
+        .info { color: #666; font-size: 14px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Video Embed Codes (1920x1080)</h1>
+    <p>Total Videos: ${filteredVideos.length}</p>
+    
+${filteredVideos.map((video) => {
+  const embedCode = getEmbedCode(video.id, video.title);
+  return `    <div class="video-section">
+        <div class="video-title">📹 ${video.title}</div>
+        <div class="embed-code">${embedCode.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+        <div class="info">Resolution: 1920x1080 | Format: ${video.format}</div>
+    </div>`;
+}).join('\n')}
+</body>
+</html>`;
 
-    const blob = new Blob([allCodes], { type: "text/html" });
+    const blob = new Blob([htmlContent], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -77,7 +105,56 @@ export const BulkEmbedCodes = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success("Embed codes downloaded!");
+    toast.success("Downloaded as HTML!");
+  };
+
+  const downloadAsTXT = () => {
+    const txtContent = filteredVideos
+      .map((video) => {
+        const embedCode = getEmbedCode(video.id, video.title);
+        return `VIDEO: ${video.title}\nFORMAT: ${video.format}\nRESOLUTION: 1920x1080\nEMBED CODE:\n${embedCode}\n${'-'.repeat(80)}`;
+      })
+      .join("\n\n");
+
+    const header = `VIDEO EMBED CODES\nTotal Videos: ${filteredVideos.length}\nGenerated: ${new Date().toLocaleString()}\n${'='.repeat(80)}\n\n`;
+    const fullContent = header + txtContent;
+
+    const blob = new Blob([fullContent], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "embed-codes.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Downloaded as TXT!");
+  };
+
+  const downloadAsCSV = () => {
+    const csvHeader = "Video Title,File Format,Resolution,Embed Code\n";
+    const csvContent = filteredVideos
+      .map((video) => {
+        const embedCode = getEmbedCode(video.id, video.title);
+        // Escape quotes in CSV
+        const title = `"${video.title.replace(/"/g, '""')}"`;
+        const code = `"${embedCode.replace(/"/g, '""')}"`;
+        return `${title},${video.format},1920x1080,${code}`;
+      })
+      .join("\n");
+
+    const fullContent = csvHeader + csvContent;
+
+    const blob = new Blob([fullContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "embed-codes.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Downloaded as CSV (Excel-compatible)!");
   };
 
   return (
@@ -103,14 +180,31 @@ export const BulkEmbedCodes = () => {
               <Copy className="w-4 h-4 mr-2" />
               Copy All Codes
             </Button>
-            <Button
-              onClick={downloadAllEmbedCodes}
-              disabled={filteredVideos.length === 0}
-              variant="outline"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download as HTML
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  disabled={filteredVideos.length === 0}
+                  variant="outline"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={downloadAsHTML}>
+                  <Code2 className="w-4 h-4 mr-2" />
+                  HTML File (with video names)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={downloadAsTXT}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  TXT File (with video names)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={downloadAsCSV}>
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  CSV File (Excel-compatible)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

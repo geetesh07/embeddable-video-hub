@@ -24,6 +24,12 @@ Preferred communication style: Simple, everyday language.
   - Copy all embed codes at once
   - Download all embed codes as HTML file
   - All codes ready for LMS integration
+- ✅ **Folder-Specific Embed Codes**: On-demand embed code generation for current folder
+  - "Get Embed Codes for This Folder" button appears when browsing folders with videos
+  - Shows only videos from the current folder path (e.g., when in folder 1/2/3/4, shows only those videos)
+  - Copy individual or all codes for that folder
+  - Download folder-specific codes as HTML file
+  - Perfect for organizing embed codes by folder structure
 - ✅ **Enhanced Navigation**: Fixed NavLink component to properly display icons in navigation bar
 
 ### November 16, 2025 - Advanced LMS Features & Gamification System

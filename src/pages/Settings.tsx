@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Folder, Plus, Settings as SettingsIcon, ExternalLink, Globe } from "lucide-react";
+import { Folder, Plus, Settings as SettingsIcon, ExternalLink, Globe, Shield, Trash2 } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,16 @@ import { toast } from "sonner";
 
 export const Settings = () => {
   const [newFolder, setNewFolder] = useState("");
+  const [newDomain, setNewDomain] = useState("");
 
   const { data: folders, refetch } = useQuery({
     queryKey: ["config-folders"],
     queryFn: () => api.getConfigFolders(),
+  });
+
+  const { data: allowedDomains, refetch: refetchDomains } = useQuery({
+    queryKey: ["allowed-embed-domains"],
+    queryFn: () => api.getAllowedEmbedDomains(),
   });
 
   const { data: serverHealth } = useQuery({
@@ -36,6 +42,37 @@ export const Settings = () => {
       refetch();
     } catch (error) {
       toast.error("Failed to add folder");
+    }
+  };
+
+  const handleAddDomain = async () => {
+    if (!newDomain.trim()) {
+      toast.error("Please enter a domain");
+      return;
+    }
+
+    if (!newDomain.startsWith('http://') && !newDomain.startsWith('https://')) {
+      toast.error("Domain must start with http:// or https://");
+      return;
+    }
+
+    try {
+      await api.addAllowedEmbedDomain(newDomain);
+      toast.success("Domain added successfully!");
+      setNewDomain("");
+      refetchDomains();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add domain");
+    }
+  };
+
+  const handleRemoveDomain = async (domain: string) => {
+    try {
+      await api.removeAllowedEmbedDomain(domain);
+      toast.success("Domain removed successfully!");
+      refetchDomains();
+    } catch (error) {
+      toast.error("Failed to remove domain");
     }
   };
 
@@ -86,6 +123,66 @@ export const Settings = () => {
                 </div>
               </>
             )}
+          </div>
+        </Card>
+
+        {/* Embed Security */}
+        <Card className="p-6 bg-gradient-card border-border/50 mb-6">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" />
+            Embed Security
+          </h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Control which websites can embed your videos. Only domains listed below will be allowed to show your video content in iframes.
+          </p>
+          
+          <div className="space-y-4 mb-6">
+            {allowedDomains && allowedDomains.length > 0 ? (
+              allowedDomains.map((domain, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-3 p-4 bg-secondary rounded-lg"
+                >
+                  <Shield className="w-5 h-5 text-green-500 shrink-0" />
+                  <span className="font-mono text-sm flex-1 truncate">{domain}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveDomain(domain)}
+                    className="shrink-0"
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <p className="text-muted-foreground text-center py-8">
+                No allowed domains configured (embedding will be blocked)
+              </p>
+            )}
+          </div>
+
+          <Separator className="my-6" />
+
+          <div className="space-y-4">
+            <Label htmlFor="new-domain">Add Allowed Domain</Label>
+            <div className="flex gap-2">
+              <Input
+                id="new-domain"
+                value={newDomain}
+                onChange={(e) => setNewDomain(e.target.value)}
+                placeholder="e.g., https://lms.ntechnosolution.com"
+                onKeyPress={(e) => e.key === 'Enter' && handleAddDomain()}
+              />
+              <Button onClick={handleAddDomain}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              <strong>Important:</strong> Include the full URL with http:// or https://<br />
+              Example: https://lms.ntechnosolution.com
+            </p>
           </div>
         </Card>
 
