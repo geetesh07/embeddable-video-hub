@@ -34,6 +34,13 @@ export interface BrowseResult {
   error?: string;
 }
 
+export interface VideoProgress {
+  watched: boolean;
+  progress: number;
+  completed: boolean;
+  lastWatched: string | null;
+}
+
 class LocalAPI {
   private baseUrl: string;
 
@@ -119,6 +126,70 @@ class LocalAPI {
     const response = await fetch(`${this.baseUrl}/api/health`);
     if (!response.ok) {
       throw new Error('Server health check failed');
+    }
+    return response.json();
+  }
+
+  getThumbnailUrl(videoId: string): string {
+    return `${this.baseUrl}/api/thumbnails/${videoId}.jpg`;
+  }
+
+  async generateThumbnail(videoId: string): Promise<{ success: boolean; thumbnail: string }> {
+    const response = await fetch(`${this.baseUrl}/api/thumbnail/${videoId}`, {
+      method: 'POST',
+    });
+    if (!response.ok) {
+      throw new Error('Failed to generate thumbnail');
+    }
+    return response.json();
+  }
+
+  async getAllProgress(): Promise<Record<string, VideoProgress>> {
+    const response = await fetch(`${this.baseUrl}/api/progress`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch progress');
+    }
+    return response.json();
+  }
+
+  async getProgress(videoId: string): Promise<VideoProgress> {
+    const response = await fetch(`${this.baseUrl}/api/progress/${videoId}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch video progress');
+    }
+    return response.json();
+  }
+
+  async updateProgress(videoId: string, data: Partial<VideoProgress>): Promise<VideoProgress> {
+    const response = await fetch(`${this.baseUrl}/api/progress/${videoId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to update progress');
+    }
+    return response.json();
+  }
+
+  async markComplete(videoId: string): Promise<VideoProgress> {
+    const response = await fetch(`${this.baseUrl}/api/progress/${videoId}/complete`, {
+      method: 'POST',
+    });
+    if (!response.ok) {
+      throw new Error('Failed to mark video as complete');
+    }
+    return response.json();
+  }
+
+  async resetProgress(videoId: string): Promise<VideoProgress> {
+    const response = await fetch(`${this.baseUrl}/api/progress/${videoId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      throw new Error('Failed to reset progress');
     }
     return response.json();
   }

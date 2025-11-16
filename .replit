@@ -5,6 +5,7 @@ integrations = ["javascript_database:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
+packages = ["ffmpeg"]
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -66,10 +67,6 @@ externalPort = 8080
 [[ports]]
 localPort = 33301
 externalPort = 3001
-
-[[ports]]
-localPort = 40099
-externalPort = 3003
 
 [[ports]]
 localPort = 46629

@@ -5,6 +5,7 @@ import fsSync from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import ffmpeg from 'fluent-ffmpeg';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -15,12 +16,24 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Configuration file path
+// Configuration file paths
 const configPath = path.join(__dirname, 'config.json');
+const progressPath = path.join(__dirname, 'progress.json');
+const thumbnailsDir = path.join(__dirname, 'thumbnails');
 
 // Initialize config file if it doesn't exist
 if (!fsSync.existsSync(configPath)) {
   fsSync.writeFileSync(configPath, JSON.stringify({ folders: [] }, null, 2));
+}
+
+// Initialize progress file if it doesn't exist
+if (!fsSync.existsSync(progressPath)) {
+  fsSync.writeFileSync(progressPath, JSON.stringify({}, null, 2));
+}
+
+// Create thumbnails directory if it doesn't exist
+if (!fsSync.existsSync(thumbnailsDir)) {
+  fsSync.mkdirSync(thumbnailsDir, { recursive: true });
 }
 
 // Read video folders from config
@@ -36,6 +49,62 @@ function getConfigFolders() {
 // Save folders to config
 function saveConfigFolders(folders) {
   fsSync.writeFileSync(configPath, JSON.stringify({ folders }, null, 2));
+}
+
+// Progress tracking functions
+function getProgress() {
+  try {
+    const data = fsSync.readFileSync(progressPath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveProgress(progress) {
+  fsSync.writeFileSync(progressPath, JSON.stringify(progress, null, 2));
+}
+
+function getVideoProgress(videoId) {
+  const progress = getProgress();
+  return progress[videoId] || { watched: false, progress: 0, completed: false, lastWatched: null };
+}
+
+function updateVideoProgress(videoId, data) {
+  const progress = getProgress();
+  progress[videoId] = {
+    ...progress[videoId],
+    ...data,
+    lastWatched: new Date().toISOString()
+  };
+  saveProgress(progress);
+  return progress[videoId];
+}
+
+// Generate video thumbnail
+async function generateThumbnail(videoPath, videoId) {
+  return new Promise((resolve, reject) => {
+    const thumbnailPath = path.join(thumbnailsDir, `${videoId}.jpg`);
+    
+    // Check if thumbnail already exists
+    if (fsSync.existsSync(thumbnailPath)) {
+      resolve(thumbnailPath);
+      return;
+    }
+
+    ffmpeg(videoPath)
+      .screenshots({
+        timestamps: ['10%'],
+        filename: `${videoId}.jpg`,
+        folder: thumbnailsDir,
+        size: '640x360'
+      })
+      .on('end', () => resolve(thumbnailPath))
+      .on('error', (err) => {
+        console.error('Thumbnail generation error:', err);
+        reject(err);
+      });
+  });
 }
 
 // Scan folders for videos recursively
@@ -320,6 +389,107 @@ app.get('/api/health', (req, res) => {
     folders: folders.length,
     timestamp: new Date().toISOString()
   });
+});
+
+// Serve thumbnails with lazy generation
+app.get('/api/thumbnails/:id.jpg', async (req, res) => {
+  const videoId = req.params.id;
+  const thumbnailPath = path.join(thumbnailsDir, `${videoId}.jpg`);
+  
+  // If thumbnail exists, serve it
+  if (fsSync.existsSync(thumbnailPath)) {
+    return res.sendFile(thumbnailPath);
+  }
+  
+  // If not, try to generate it on-the-fly
+  try {
+    const videos = await scanVideoFolders();
+    const video = videos.find(v => v.id === videoId);
+    
+    if (!video) {
+      return res.status(404).json({ error: 'Video not found' });
+    }
+
+    // Generate thumbnail
+    await generateThumbnail(video.path, video.id);
+    
+    // Now serve it
+    if (fsSync.existsSync(thumbnailPath)) {
+      return res.sendFile(thumbnailPath);
+    } else {
+      return res.status(500).json({ error: 'Thumbnail generation failed' });
+    }
+  } catch (error) {
+    console.error('Lazy thumbnail generation error:', error);
+    return res.status(500).json({ error: 'Failed to generate thumbnail' });
+  }
+});
+
+// Generate thumbnail for a video
+app.post('/api/thumbnail/:id', async (req, res) => {
+  try {
+    const videos = await scanVideoFolders();
+    const video = videos.find(v => v.id === req.params.id);
+    
+    if (!video) {
+      return res.status(404).json({ error: 'Video not found' });
+    }
+
+    const thumbnailPath = await generateThumbnail(video.path, video.id);
+    res.json({ 
+      success: true, 
+      thumbnail: `/api/thumbnails/${video.id}.jpg` 
+    });
+  } catch (error) {
+    console.error('Thumbnail generation error:', error);
+    res.status(500).json({ error: 'Failed to generate thumbnail' });
+  }
+});
+
+// Get all progress data
+app.get('/api/progress', (req, res) => {
+  const progress = getProgress();
+  res.json(progress);
+});
+
+// Get progress for a specific video
+app.get('/api/progress/:id', (req, res) => {
+  const progress = getVideoProgress(req.params.id);
+  res.json(progress);
+});
+
+// Update progress for a video
+app.post('/api/progress/:id', (req, res) => {
+  const { watched, progress, completed } = req.body;
+  const videoId = req.params.id;
+  
+  const data = {};
+  if (watched !== undefined) data.watched = watched;
+  if (progress !== undefined) data.progress = progress;
+  if (completed !== undefined) data.completed = completed;
+  
+  const updated = updateVideoProgress(videoId, data);
+  res.json(updated);
+});
+
+// Mark video as complete
+app.post('/api/progress/:id/complete', (req, res) => {
+  const updated = updateVideoProgress(req.params.id, {
+    watched: true,
+    completed: true,
+    progress: 100
+  });
+  res.json(updated);
+});
+
+// Reset video progress
+app.delete('/api/progress/:id', (req, res) => {
+  const updated = updateVideoProgress(req.params.id, {
+    watched: false,
+    completed: false,
+    progress: 0
+  });
+  res.json(updated);
 });
 
 app.listen(PORT, () => {
