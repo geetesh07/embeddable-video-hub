@@ -1,9 +1,8 @@
+@import "plyr-react/plyr.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Plyr video player styles */
-@import "plyr-react/plyr.css";
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
