@@ -29,15 +29,20 @@ export const EmbedDialog = ({
   const [copied, setCopied] = useState(false);
   const baseUrl = window.location.origin;
 
-  const iframeCode = `<iframe src="${baseUrl}/embed/${videoId}" width="640" height="360" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="${videoTitle}"></iframe>`;
+  const iframeCode = `<iframe src="${baseUrl}/embed/${videoId}" width="1920" height="1080" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="${videoTitle}"></iframe>`;
   
   const directUrl = `${baseUrl}/watch/${videoId}`;
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    toast.success("Copied to clipboard!");
-    setTimeout(() => setCopied(false), 2000);
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast.success("Copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast.error("Failed to copy. Please try again.");
+      console.error("Failed to copy:", err);
+    }
   };
 
   return (

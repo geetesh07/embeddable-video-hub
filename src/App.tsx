@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LocalLibrary } from "./pages/LocalLibrary";
 import { LocalWatch } from "./pages/LocalWatch";
 import { LocalEmbed } from "./pages/LocalEmbed";
+import { BulkEmbedCodes } from "./pages/BulkEmbedCodes";
 import { Settings } from "./pages/Settings";
 import { Folders } from "./pages/Folders";
 import NotFound from "./pages/NotFound";
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/" element={<LocalLibrary />} />
           <Route path="/watch/:id" element={<LocalWatch />} />
           <Route path="/embed/:id" element={<LocalEmbed />} />
+          <Route path="/embed-codes" element={<BulkEmbedCodes />} />
           <Route path="/folders" element={<Folders />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />

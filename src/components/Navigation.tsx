@@ -1,4 +1,4 @@
-import { Film, Settings, Folder } from "lucide-react";
+import { Film, Settings, Folder, Code2 } from "lucide-react";
 import { NavLink } from "./NavLink";
 
 export const Navigation = () => {
@@ -13,6 +13,9 @@ export const Navigation = () => {
           <div className="flex items-center gap-6">
             <NavLink to="/" icon={Film}>
               Library
+            </NavLink>
+            <NavLink to="/embed-codes" icon={Code2}>
+              Embed Codes
             </NavLink>
             <NavLink to="/folders" icon={Folder}>
               Folders

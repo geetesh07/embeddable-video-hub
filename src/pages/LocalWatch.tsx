@@ -5,6 +5,7 @@ import { ArrowLeft, Share2, Calendar, HardDrive } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { EmbedDialog } from "@/components/EmbedDialog";
+import { Breadcrumb } from "@/components/Breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api";
@@ -68,14 +69,12 @@ export const LocalWatch = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       <div className="container mx-auto px-4 py-8">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Library
-        </Button>
+        <Breadcrumb
+          items={[
+            { label: "Local Library", href: "/" },
+            { label: video.title },
+          ]}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
