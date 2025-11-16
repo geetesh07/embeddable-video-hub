@@ -1,37 +1,33 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Grid, List, RefreshCw, ServerCog, ChevronDown, ChevronRight, Folder, SortAsc } from "lucide-react";
+import { Loader2, Folder as FolderIcon, ChevronRight, Home } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { VideoCard } from "@/components/VideoCard";
-import { EmbedDialog } from "@/components/EmbedDialog";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
-import { api, Video } from "@/lib/api";
-
-type SortOption = 'name-asc' | 'name-desc' | 'date-asc' | 'date-desc' | 'folder-asc';
+import { api } from "@/lib/api";
 
 export const LocalLibrary = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [embedDialogOpen, setEmbedDialogOpen] = useState(false);
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
-  const [sortBy, setSortBy] = useState<SortOption>('folder-asc');
-  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
-  const navigate = useNavigate();
+  const [currentPath, setCurrentPath] = useState<string | null>(null);
+  const [pathHistory, setPathHistory] = useState<Array<{ name: string; path: string | null }>>([
+    { name: "Home", path: null }
+  ]);
 
-  const { data: videos, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ["local-videos"],
-    queryFn: () => api.getVideos(),
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
+  const { data: browseData, isLoading } = useQuery({
+    queryKey: ["browse", currentPath],
+    queryFn: () => api.browseFolders(currentPath || undefined),
   });
 
-  const { data: serverHealth } = useQuery({
-    queryKey: ["server-health"],
-    queryFn: () => api.healthCheck(),
-    refetchInterval: 10000,
-  });
+  const handleFolderClick = (folder: { name: string; path: string }) => {
+    setCurrentPath(folder.path);
+    setPathHistory([...pathHistory, { name: folder.name, path: folder.path }]);
+  };
+
+  const handleBreadcrumbClick = (index: number) => {
+    const newPath = pathHistory[index].path;
+    setCurrentPath(newPath);
+    setPathHistory(pathHistory.slice(0, index + 1));
+  };
 
   const filteredVideos = videos?.filter((video) =>
     video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
