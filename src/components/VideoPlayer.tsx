@@ -27,6 +27,7 @@ export const VideoPlayer = ({ videoUrl, subtitles = [], poster }: VideoPlayerPro
       poster: poster,
     },
     options: {
+      autoplay: false,
       controls: [
         "play-large",
         "play",
