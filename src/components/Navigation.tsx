@@ -11,13 +11,16 @@ export const Navigation = () => {
             <span className="text-xl font-bold">VideoHub</span>
           </div>
           <div className="flex items-center gap-6">
-            <NavLink to="/" icon={Film}>
+            <NavLink to="/" className="flex items-center gap-2 text-foreground/70 hover:text-foreground transition-colors" activeClassName="text-primary font-medium">
+              <Film className="w-4 h-4" />
               Library
             </NavLink>
-            <NavLink to="/folders" icon={Folder}>
+            <NavLink to="/folders" className="flex items-center gap-2 text-foreground/70 hover:text-foreground transition-colors" activeClassName="text-primary font-medium">
+              <Folder className="w-4 h-4" />
               Folders
             </NavLink>
-            <NavLink to="/settings" icon={Settings}>
+            <NavLink to="/settings" className="flex items-center gap-2 text-foreground/70 hover:text-foreground transition-colors" activeClassName="text-primary font-medium">
+              <Settings className="w-4 h-4" />
               Settings
             </NavLink>
           </div>

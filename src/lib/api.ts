@@ -144,6 +144,14 @@ class LocalAPI {
     return response.json();
   }
 
+  async getNextVideos(videoId: string, limit: number = 5): Promise<Video[]> {
+    const response = await fetch(`${this.baseUrl}/api/videos/${videoId}/next?limit=${limit}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch next videos');
+    }
+    return response.json();
+  }
+
   async getAllProgress(): Promise<Record<string, VideoProgress>> {
     const response = await fetch(`${this.baseUrl}/api/progress`);
     if (!response.ok) {
