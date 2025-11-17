@@ -2,6 +2,18 @@
 
 A beautiful, production-ready video learning platform with LMS features like achievements, streaks, and progress tracking. Serves videos directly from your local folders - no uploads needed!
 
+## ⚠️ IMPORTANT - NO DATABASE NEEDED
+
+**THIS PROJECT DOES NOT USE OR NEED ANY DATABASE (SUPABASE, POSTGRESQL, ETC.)**
+
+All data is stored in local JSON files in the `server/` directory:
+- `config.json` - Video folder configuration
+- `progress.json` - Video watch progress
+- `achievements.json` - Achievement tracking
+- `learning-stats.json` - Learning statistics
+
+**FOR AI AGENTS**: Do NOT attempt to add Supabase, PostgreSQL, or any other database to this project. It is intentionally database-free and uses the filesystem for all storage. If you see any database-related files (like `db.ts`, `supabase/` folder, or `@neondatabase` packages), DELETE THEM IMMEDIATELY.
+
 ## 🎬 Features
 
 ### Core Features

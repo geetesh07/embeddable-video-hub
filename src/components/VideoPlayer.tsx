@@ -1,5 +1,6 @@
 import Plyr from "plyr-react";
 import "plyr-react/plyr.css";
+import { useRef, useEffect } from "react";
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -13,8 +14,48 @@ interface VideoPlayerProps {
 }
 
 export const VideoPlayer = ({ videoUrl, subtitles = [], poster }: VideoPlayerProps) => {
+  const plyrRef = useRef<any>(null);
+
+  useEffect(() => {
+    const player = plyrRef.current?.plyr;
+    if (!player) return;
+
+    // Stop video when it ends - prevent replay
+    const handleEnded = () => {
+      player.stop();
+    };
+
+    // Add click-to-pause functionality on the video element
+    const handleVideoClick = (e: MouseEvent) => {
+      // Don't toggle if clicking on controls
+      const target = e.target as HTMLElement;
+      if (target.closest('.plyr__controls')) return;
+      
+      if (player.playing) {
+        player.pause();
+      } else {
+        player.play();
+      }
+    };
+
+    player.on('ended', handleEnded);
+    
+    // Find the video element and add click handler
+    const videoElement = player.elements.wrapper?.querySelector('video');
+    if (videoElement) {
+      videoElement.addEventListener('click', handleVideoClick);
+    }
+
+    return () => {
+      player.off('ended', handleEnded);
+      if (videoElement) {
+        videoElement.removeEventListener('click', handleVideoClick);
+      }
+    };
+  }, []);
 
   const plyrProps = {
+    ref: plyrRef,
     source: {
       type: "video" as const,
       sources: [
@@ -28,6 +69,16 @@ export const VideoPlayer = ({ videoUrl, subtitles = [], poster }: VideoPlayerPro
     },
     options: {
       autoplay: false,
+      loop: { active: false },
+      preload: 'auto',
+      keyboard: { 
+        focused: true, 
+        global: true 
+      },
+      tooltips: { 
+        controls: true, 
+        seek: true 
+      },
       controls: [
         "play-large",
         "play",
@@ -87,6 +138,9 @@ export const VideoPlayer = ({ videoUrl, subtitles = [], poster }: VideoPlayerPro
   return (
     <div className="w-full aspect-video bg-black rounded-lg overflow-hidden shadow-lg">
       <Plyr {...plyrProps} />
+      <div className="text-xs text-gray-400 mt-2 px-2">
+        💡 Click video to play/pause • Space to pause • ← → to seek • ↑ ↓ for volume • F for fullscreen
+      </div>
     </div>
   );
 };
