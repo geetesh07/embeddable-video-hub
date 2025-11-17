@@ -144,6 +144,14 @@ class LocalAPI {
     return response.json();
   }
 
+  async getNextVideos(videoId: string, limit: number = 5): Promise<Video[]> {
+    const response = await fetch(`${this.baseUrl}/api/videos/${videoId}/next?limit=${limit}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch next videos');
+    }
+    return response.json();
+  }
+
   async getAllProgress(): Promise<Record<string, VideoProgress>> {
     const response = await fetch(`${this.baseUrl}/api/progress`);
     if (!response.ok) {
@@ -192,46 +200,6 @@ class LocalAPI {
       throw new Error('Failed to reset progress');
     }
     return response.json();
-  }
-
-  async getAllowedEmbedDomains(): Promise<string[]> {
-    const response = await fetch(`${this.baseUrl}/api/config/embed-domains`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch allowed embed domains');
-    }
-    const data = await response.json();
-    return data.domains;
-  }
-
-  async addAllowedEmbedDomain(domain: string): Promise<string[]> {
-    const response = await fetch(`${this.baseUrl}/api/config/embed-domains`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ domain }),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to add allowed embed domain');
-    }
-    const data = await response.json();
-    return data.domains;
-  }
-
-  async removeAllowedEmbedDomain(domain: string): Promise<string[]> {
-    const response = await fetch(`${this.baseUrl}/api/config/embed-domains`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ domain }),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to remove allowed embed domain');
-    }
-    const data = await response.json();
-    return data.domains;
   }
 }
 
