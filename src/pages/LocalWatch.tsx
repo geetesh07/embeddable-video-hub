@@ -130,6 +130,11 @@ export const LocalWatch = () => {
             <VideoPlayer
               videoUrl={videoUrl}
               subtitles={subtitleTracks}
+              onVideoEnd={() => {
+                if (nextVideos.length > 0) {
+                  handleNextVideo(nextVideos[0].id);
+                }
+              }}
             />
 
             <Card className="p-6 bg-gradient-card border-border/50">

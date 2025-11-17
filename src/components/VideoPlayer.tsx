@@ -11,18 +11,23 @@ interface VideoPlayerProps {
     src: string;
   }>;
   poster?: string;
+  onVideoEnd?: () => void;
 }
 
-export const VideoPlayer = ({ videoUrl, subtitles = [], poster }: VideoPlayerProps) => {
+export const VideoPlayer = ({ videoUrl, subtitles = [], poster, onVideoEnd }: VideoPlayerProps) => {
   const plyrRef = useRef<any>(null);
 
   useEffect(() => {
     const player = plyrRef.current?.plyr;
     if (!player) return;
 
-    // Stop video when it ends - prevent replay
+    // When video ends, play next video (if callback provided) or just stop
     const handleEnded = () => {
-      player.stop();
+      if (onVideoEnd) {
+        onVideoEnd();
+      } else {
+        player.stop();
+      }
     };
 
     // Add click-to-pause functionality on the video element
