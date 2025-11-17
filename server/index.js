@@ -279,7 +279,7 @@ function checkAchievements() {
 
 // Generate video thumbnail
 async function generateThumbnail(videoPath, videoId) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const thumbnailPath = path.join(thumbnailsDir, `${videoId}.jpg`);
     
     // Check if thumbnail already exists
@@ -291,20 +291,19 @@ async function generateThumbnail(videoPath, videoId) {
     console.log(`Generating thumbnail for: ${videoPath}`);
     
     ffmpeg(videoPath)
-      .screenshots({
-        timestamps: ['5%'],
-        filename: `${videoId}.jpg`,
-        folder: thumbnailsDir,
-        size: '640x360'
+      .on('error', (err) => {
+        console.error(`❌ Thumbnail generation failed for ${videoId}:`, err.message);
+        resolve(null);
       })
       .on('end', () => {
         console.log(`✅ Thumbnail generated: ${videoId}.jpg`);
         resolve(thumbnailPath);
       })
-      .on('error', (err) => {
-        console.error(`❌ Thumbnail generation failed for ${videoId}:`, err.message);
-        // Return a placeholder path instead of rejecting
-        resolve(null);
+      .screenshots({
+        timestamps: ['5%'],
+        filename: `${videoId}.jpg`,
+        folder: thumbnailsDir,
+        size: '320x180'
       });
   });
 }
@@ -408,6 +407,30 @@ app.get('/api/videos/:id', async (req, res) => {
   }
   
   res.json(video);
+});
+
+// Get next videos in the same folder
+app.get('/api/videos/:id/next', async (req, res) => {
+  const limit = parseInt(req.query.limit) || 5;
+  const videos = await scanVideoFolders();
+  const currentVideo = videos.find(v => v.id === req.params.id);
+  
+  if (!currentVideo) {
+    return res.status(404).json({ error: 'Video not found' });
+  }
+  
+  // Get videos from the same folder, sorted by name
+  const sameFolder = videos
+    .filter(v => v.sourceFolder === currentVideo.sourceFolder && v.folder === currentVideo.folder)
+    .sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' }));
+  
+  // Find current video index and get next videos
+  const currentIndex = sameFolder.findIndex(v => v.id === currentVideo.id);
+  const nextVideos = currentIndex >= 0 
+    ? sameFolder.slice(currentIndex + 1, currentIndex + 1 + limit)
+    : [];
+  
+  res.json(nextVideos);
 });
 
 // Browse folders
