@@ -18,46 +18,46 @@ export const VideoPlayer = ({ videoUrl, subtitles = [], poster, onVideoEnd }: Vi
   const plyrRef = useRef<any>(null);
 
   useEffect(() => {
-    const player = plyrRef.current?.plyr;
-    if (!player) return;
+    // Give the player time to initialize
+    const timer = setTimeout(() => {
+      const player = plyrRef.current?.plyr;
+      if (!player) return;
 
-    // When video ends, play next video (if callback provided) or just stop
-    const handleEnded = () => {
-      if (onVideoEnd) {
-        onVideoEnd();
-      } else {
-        player.stop();
-      }
-    };
+      // Find the actual video element
+      const videoElement = player.elements?.wrapper?.querySelector('video');
+      if (!videoElement) return;
 
-    // Add click-to-pause functionality on the video element
-    const handleVideoClick = (e: MouseEvent) => {
-      // Don't toggle if clicking on controls
-      const target = e.target as HTMLElement;
-      if (target.closest('.plyr__controls')) return;
-      
-      if (player.playing) {
-        player.pause();
-      } else {
-        player.play();
-      }
-    };
+      // When video ends, play next video (if callback provided)
+      const handleEnded = () => {
+        if (onVideoEnd) {
+          onVideoEnd();
+        }
+      };
 
-    player.on('ended', handleEnded);
-    
-    // Find the video element and add click handler
-    const videoElement = player.elements.wrapper?.querySelector('video');
-    if (videoElement) {
+      // Add click-to-pause functionality on the video element
+      const handleVideoClick = (e: Event) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('.plyr__controls')) return;
+        
+        if (player.playing) {
+          player.pause();
+        } else {
+          player.play();
+        }
+      };
+
+      // Use native video element events
+      videoElement.addEventListener('ended', handleEnded);
       videoElement.addEventListener('click', handleVideoClick);
-    }
 
-    return () => {
-      player.off('ended', handleEnded);
-      if (videoElement) {
+      return () => {
+        videoElement.removeEventListener('ended', handleEnded);
         videoElement.removeEventListener('click', handleVideoClick);
-      }
-    };
-  }, []);
+      };
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [onVideoEnd]);
 
   const plyrProps = {
     ref: plyrRef,
