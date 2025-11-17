@@ -13,14 +13,14 @@ import ffprobeStatic from 'ffprobe-static';
 if (process.env.FFMPEG_PATH) {
   ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH);
 } else if (ffmpegStatic) {
-  ffmpeg.setFfmpegPath(ffmpegStatic as unknown as string);
+  ffmpeg.setFfmpegPath(ffmpegStatic);
 }
 
 if (process.env.FFPROBE_PATH) {
   ffmpeg.setFfprobePath(process.env.FFPROBE_PATH);
-} else if ((ffprobeStatic as any)?.path) {
+} else if (ffprobeStatic?.path) {
   // ffprobe-static typically exports an object with a `path` property
-  ffmpeg.setFfprobePath((ffprobeStatic as any).path);
+  ffmpeg.setFfprobePath(ffprobeStatic.path);
 }
 
 const __filename = fileURLToPath(import.meta.url);
